@@ -1,0 +1,1 @@
+# zabbix-message-module-6.4
