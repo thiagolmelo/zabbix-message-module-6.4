@@ -1,0 +1,7 @@
+{
+    "enabled": false,
+    "message": "Welcome to Zabbix! Please read the latest updates.",
+    "type": "info",
+    "dismissible": true,
+    "show_to": "all"
+}
