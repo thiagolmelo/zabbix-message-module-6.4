@@ -9,12 +9,29 @@ $form = (new CForm('post', 'zabbix.php'))
     ->addVar('action', 'messageoftheday.save')
     ->setName('messageoftheday_form');
 
-// Warning if config file is not writable
+// ---- Flash notices (passed via ?saved= query param) ----
+if (array_key_exists('saved', $_GET)) {
+    if ($_GET['saved'] === '1') {
+        $form->addItem(
+            (new CDiv(_('Configuration saved successfully.')))
+                ->addClass(ZBX_STYLE_MSG_GOOD)
+                ->addStyle('margin-bottom: 8px; padding: 8px 12px;')
+        );
+    } else {
+        $form->addItem(
+            (new CDiv(_('Failed to save configuration. Check that config.json is writable by the web server.')))
+                ->addClass(ZBX_STYLE_MSG_BAD)
+                ->addStyle('margin-bottom: 8px; padding: 8px 12px;')
+        );
+    }
+}
+
+// ---- Warning if config file is not writable ----
 if (!$data['config_writable']) {
     $form->addItem(
-        (new CDiv(
-            _('Warning: config.json is not writable by the web server. Changes cannot be saved.')
-        ))->addClass(ZBX_STYLE_RED)->addStyle('margin-bottom: 8px;')
+        (new CDiv(_('Warning: config.json is not writable by the web server. Changes cannot be saved.')))
+            ->addClass(ZBX_STYLE_RED)
+            ->addStyle('margin-bottom: 8px;')
     );
 }
 

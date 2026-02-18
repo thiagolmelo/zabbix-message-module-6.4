@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Processar ZIP e Push GitHub",
+            "type": "shell",
+            "command": "if (Test-Path 'MessageOfTheDay_Zabbix64.zip') { powershell Expand-Archive -Path MessageOfTheDay_Zabbix64.zip -DestinationPath . -Force ; del MessageOfTheDay_Zabbix64.zip ; git add . ; git commit -m 'Update module from manual download' ; git push origin main ; Write-Host '--- SUCESSO: Arquivos extraídos e enviados ao GitHub ---' -ForegroundColor Green } else { Write-Host '--- ERRO: O arquivo MessageOfTheDay_Zabbix64.zip não foi encontrado na pasta! ---' -ForegroundColor Red }"
+        }
+    ]
+}

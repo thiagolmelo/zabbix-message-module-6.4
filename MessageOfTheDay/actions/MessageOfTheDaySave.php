@@ -3,7 +3,6 @@
 namespace Modules\MessageOfTheDay\Actions;
 
 use CController,
-    CControllerResponseData,
     CControllerResponseRedirect,
     CUrl,
     CWebUser;
@@ -26,11 +25,12 @@ class MessageOfTheDaySave extends CController {
         $ret = $this->validateInput($fields);
 
         if (!$ret) {
-            $this->setResponse(
-                new CControllerResponseRedirect(
-                    (new CUrl('zabbix.php'))->setArgument('action', 'messageoftheday.edit')
-                )
-            );
+            $this->setResponse(new CControllerResponseRedirect(
+                (new CUrl('zabbix.php'))
+                    ->setArgument('action', 'messageoftheday.edit')
+                    ->setArgument('saved', '0')
+                    ->getUrl()
+            ));
         }
 
         return $ret;
@@ -55,16 +55,11 @@ class MessageOfTheDaySave extends CController {
             json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
         );
 
-        $redirect = new CControllerResponseRedirect(
-            (new CUrl('zabbix.php'))->setArgument('action', 'messageoftheday.edit')
-        );
-
-        if ($success !== false) {
-            $redirect->setMessageOk(_('Configuration saved successfully.'));
-        } else {
-            $redirect->setMessageError(_('Failed to save configuration. Check that config.json is writable.'));
-        }
-
-        $this->setResponse($redirect);
+        $this->setResponse(new CControllerResponseRedirect(
+            (new CUrl('zabbix.php'))
+                ->setArgument('action', 'messageoftheday.edit')
+                ->setArgument('saved', $success !== false ? '1' : '0')
+                ->getUrl()
+        ));
     }
 }
