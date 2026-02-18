@@ -2,7 +2,7 @@
     "manifest_version": 2.0,
     "id": "message-of-the-day",
     "name": "Message of the Day",
-    "version": "1.0",
+    "version": "1.1",
     "namespace": "MessageOfTheDay",
     "description": "Display a configurable banner message to all users on every page.",
     "actions": {
@@ -12,9 +12,6 @@
         },
         "messageoftheday.save": {
             "class": "MessageOfTheDaySave"
-        },
-        "messageoftheday.config": {
-            "class": "MessageOfTheDayConfig"
         }
     },
     "assets": {

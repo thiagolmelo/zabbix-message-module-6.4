@@ -2,154 +2,132 @@
  * Message of the Day — Banner Script
  * Zabbix 6.4 Frontend Module
  *
- * Fetches the banner config from the module's config endpoint and
- * injects a dismissible banner at the top of every page.
+ * Reads config injected by Module.php via zbx_add_post_js()
+ * and renders a banner at the top of every page.
  */
 (function () {
     'use strict';
 
-    const DISMISS_KEY = 'motd_dismissed';
-    const ICON_SVG = {
-        info: '<svg class="motd-icon" viewBox="0 0 20 20"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9V9h2v6zm0-8H9V5h2v2z"/></svg>',
-        warning: '<svg class="motd-icon" viewBox="0 0 20 20"><path d="M10 0L0 18h20L10 0zm1 15H9v-2h2v2zm0-4H9V7h2v4z"/></svg>',
-        danger: '<svg class="motd-icon" viewBox="0 0 20 20"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z"/></svg>',
-        success: '<svg class="motd-icon" viewBox="0 0 20 20"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-1 14.59L4.41 10 5.83 8.58 9 11.75l6.17-6.17 1.42 1.42L9 14.59z"/></svg>'
+    var DISMISS_KEY = 'motd_dismissed';
+
+    var ICON_SVG = {
+        info:    '<svg class="motd-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9V9h2v6zm0-8H9V5h2v2z"/></svg>',
+        warning: '<svg class="motd-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0L0 18h20L10 0zm1 15H9v-2h2v2zm0-4H9V7h2v4z"/></svg>',
+        danger:  '<svg class="motd-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z"/></svg>',
+        success: '<svg class="motd-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-1 14.59L4.41 10 5.83 8.58 9 11.75l6.17-6.17 1.42 1.42L9 14.59z"/></svg>'
     };
 
-    function getDismissedMessages() {
-        try {
-            return JSON.parse(sessionStorage.getItem(DISMISS_KEY) || '[]');
-        } catch (e) {
-            return [];
+    function getMessageHash(message) {
+        // Simple hash to identify this specific message text
+        var hash = 0;
+        for (var i = 0; i < message.length; i++) {
+            hash = ((hash << 5) - hash) + message.charCodeAt(i);
+            hash |= 0;
         }
+        return DISMISS_KEY + '_' + Math.abs(hash);
     }
 
-    function markDismissed(message) {
+    function isDismissed(message) {
         try {
-            var dismissed = getDismissedMessages();
-            var hash = btoa(encodeURIComponent(message)).substring(0, 32);
-            if (dismissed.indexOf(hash) === -1) {
-                dismissed.push(hash);
-                sessionStorage.setItem(DISMISS_KEY, JSON.stringify(dismissed));
-            }
-        } catch (e) {}
-    }
-
-    function isMessageDismissed(message) {
-        try {
-            var dismissed = getDismissedMessages();
-            var hash = btoa(encodeURIComponent(message)).substring(0, 32);
-            return dismissed.indexOf(hash) !== -1;
+            return sessionStorage.getItem(getMessageHash(message)) === '1';
         } catch (e) {
             return false;
         }
     }
 
+    function markDismissed(message) {
+        try {
+            sessionStorage.setItem(getMessageHash(message), '1');
+        } catch (e) {}
+    }
+
     function createBanner(config) {
+        var type = config.type || 'info';
+
         var banner = document.createElement('div');
         banner.id = 'motd-banner';
-        banner.className = 'motd-' + config.type;
+        banner.className = 'motd-' + type;
+        banner.setAttribute('role', 'alert');
 
-        var icon = ICON_SVG[config.type] || ICON_SVG.info;
+        // Icon
+        var iconWrap = document.createElement('span');
+        iconWrap.innerHTML = ICON_SVG[type] || ICON_SVG.info;
+        banner.appendChild(iconWrap);
 
-        var messageEl = document.createElement('span');
-        messageEl.className = 'motd-message';
-        messageEl.textContent = config.message;
+        // Message text
+        var msgEl = document.createElement('span');
+        msgEl.className = 'motd-message';
+        msgEl.textContent = config.message;
+        banner.appendChild(msgEl);
 
-        banner.innerHTML = icon;
-        banner.appendChild(messageEl);
-
+        // Dismiss button
         if (config.dismissible) {
-            var dismissBtn = document.createElement('button');
-            dismissBtn.className = 'motd-dismiss';
-            dismissBtn.setAttribute('aria-label', 'Dismiss message');
-            dismissBtn.setAttribute('title', 'Dismiss');
-            dismissBtn.innerHTML = '&times;';
-            dismissBtn.addEventListener('click', function () {
+            var btn = document.createElement('button');
+            btn.className = 'motd-dismiss';
+            btn.setAttribute('aria-label', 'Dismiss');
+            btn.setAttribute('title', 'Dismiss');
+            btn.innerHTML = '&times;';
+            btn.addEventListener('click', function () {
                 markDismissed(config.message);
-                banner.classList.add('motd-hidden');
+                banner.style.transition = 'opacity 0.2s';
+                banner.style.opacity = '0';
+                setTimeout(function () {
+                    if (banner.parentNode) {
+                        banner.parentNode.removeChild(banner);
+                    }
+                }, 200);
             });
-            banner.appendChild(dismissBtn);
+            banner.appendChild(btn);
         }
 
         return banner;
     }
 
     function injectBanner(config) {
-        // Already shown?
         if (document.getElementById('motd-banner')) {
-            return;
+            return; // already shown
         }
-
-        // Check if this session has dismissed this exact message
-        if (config.dismissible && isMessageDismissed(config.message)) {
-            return;
+        if (config.dismissible && isDismissed(config.message)) {
+            return; // dismissed this session
         }
 
         var banner = createBanner(config);
 
-        // Inject right after the main header / top navigation bar
-        // Zabbix 6.4 wraps content in .wrapper > .content-header or .header-navigation
-        var insertTarget = (
+        // Find the best injection point in Zabbix 6.4 layout
+        // Try common Zabbix 6.4 layout landmarks in order of preference
+        var anchor = (
             document.querySelector('.header-navigation') ||
+            document.querySelector('.top-subnav-container') ||
+            document.querySelector('.content-header') ||
             document.querySelector('.wrapper') ||
-            document.querySelector('header') ||
-            document.body
+            document.body.firstElementChild
         );
 
-        if (insertTarget && insertTarget.parentNode) {
-            insertTarget.parentNode.insertBefore(banner, insertTarget.nextSibling);
+        if (anchor && anchor.parentNode) {
+            anchor.parentNode.insertBefore(banner, anchor);
         } else {
             document.body.insertBefore(banner, document.body.firstChild);
         }
     }
 
-    function loadAndRender() {
-        // Resolve base URL for the AJAX call
-        var scriptEl = document.querySelector('script[src*="motd.banner.js"]');
-        var baseUrl = '';
-        if (scriptEl) {
-            // e.g. /zabbix/modules/MessageOfTheDay/assets/js/motd.banner.js
-            var src = scriptEl.getAttribute('src');
-            var idx = src.indexOf('/modules/');
-            if (idx !== -1) {
-                baseUrl = src.substring(0, idx);
-            }
+    function run() {
+        // Config is injected by Module.php via zbx_add_post_js()
+        if (typeof window.MOTD_CONFIG === 'undefined') {
+            return; // not enabled or not shown to this user
         }
 
-        var configUrl = baseUrl + '/zabbix.php?action=messageoftheday.config';
+        var config = window.MOTD_CONFIG;
 
-        fetch(configUrl, {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(function (response) {
-            if (!response.ok) { return null; }
-            return response.json();
-        })
-        .then(function (config) {
-            if (!config || !config.enabled || !config.message) {
-                return;
-            }
+        if (!config.enabled || !config.message) {
+            return;
+        }
 
-            // Respect "show_to" setting
-            // user_type: 1=User, 2=Admin, 3=SuperAdmin
-            if (config.show_to === 'admins' && config.user_type < 2) {
-                return;
-            }
-
-            injectBanner(config);
-        })
-        .catch(function () {
-            // Silently fail — never break the main UI
-        });
+        injectBanner(config);
     }
 
-    // Wait for DOM to be ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadAndRender);
+        document.addEventListener('DOMContentLoaded', run);
     } else {
-        loadAndRender();
+        run();
     }
 }());
