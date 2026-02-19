@@ -1,9 +1,6 @@
 /**
  * Message of the Day — Banner Script
  * Zabbix 6.4 Frontend Module
- *
- * Reads config injected by Module.php via zbx_add_post_js()
- * and renders a banner at the top of every page.
  */
 (function () {
     'use strict';
@@ -18,7 +15,6 @@
     };
 
     function getMessageHash(message) {
-        // Simple hash to identify this specific message text
         var hash = 0;
         for (var i = 0; i < message.length; i++) {
             hash = ((hash << 5) - hash) + message.charCodeAt(i);
@@ -51,6 +47,7 @@
 
         // Icon
         var iconWrap = document.createElement('span');
+        iconWrap.className = 'motd-icon-wrap';
         iconWrap.innerHTML = ICON_SVG[type] || ICON_SVG.info;
         banner.appendChild(iconWrap);
 
@@ -59,6 +56,17 @@
         msgEl.className = 'motd-message';
         msgEl.textContent = config.message;
         banner.appendChild(msgEl);
+
+        // Optional link
+        if (config.link_url && config.link_url.trim() !== '') {
+            var link = document.createElement('a');
+            link.className = 'motd-link';
+            link.href = config.link_url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = config.link_label || 'Read more';
+            banner.appendChild(link);
+        }
 
         // Dismiss button
         if (config.dismissible) {
@@ -85,16 +93,14 @@
 
     function injectBanner(config) {
         if (document.getElementById('motd-banner')) {
-            return; // already shown
+            return;
         }
         if (config.dismissible && isDismissed(config.message)) {
-            return; // dismissed this session
+            return;
         }
 
         var banner = createBanner(config);
 
-        // Find the best injection point in Zabbix 6.4 layout
-        // Try common Zabbix 6.4 layout landmarks in order of preference
         var anchor = (
             document.querySelector('.header-navigation') ||
             document.querySelector('.top-subnav-container') ||
@@ -111,17 +117,13 @@
     }
 
     function run() {
-        // Config is injected by Module.php via zbx_add_post_js()
         if (typeof window.MOTD_CONFIG === 'undefined') {
-            return; // not enabled or not shown to this user
+            return;
         }
-
         var config = window.MOTD_CONFIG;
-
         if (!config.enabled || !config.message) {
             return;
         }
-
         injectBanner(config);
     }
 

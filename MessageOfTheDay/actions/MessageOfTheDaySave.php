@@ -19,7 +19,9 @@ class MessageOfTheDaySave extends CController {
             'message'     => 'string',
             'type'        => 'in info,warning,danger,success',
             'dismissible' => 'in 0,1',
-            'show_to'     => 'in all,admins'
+            'show_to'     => 'in all,admins',
+            'link_url'    => 'string',
+            'link_label'  => 'string'
         ];
 
         $ret = $this->validateInput($fields);
@@ -41,12 +43,21 @@ class MessageOfTheDaySave extends CController {
     }
 
     protected function doAction(): void {
+        $link_url = trim($this->getInput('link_url', ''));
+
+        // Basic URL sanitization - only allow http/https
+        if ($link_url !== '' && !preg_match('/^https?:\/\//i', $link_url)) {
+            $link_url = 'https://' . $link_url;
+        }
+
         $config = [
             'enabled'     => (bool) $this->getInput('enabled', 0),
             'message'     => $this->getInput('message', ''),
             'type'        => $this->getInput('type', 'info'),
             'dismissible' => (bool) $this->getInput('dismissible', 1),
-            'show_to'     => $this->getInput('show_to', 'all')
+            'show_to'     => $this->getInput('show_to', 'all'),
+            'link_url'    => $link_url,
+            'link_label'  => trim($this->getInput('link_label', 'Read more')) ?: 'Read more'
         ];
 
         $config_file = __DIR__ . '/../config.json';

@@ -10,7 +10,6 @@ use Zabbix\Core\CModule,
 class Module extends CModule {
 
     public function init(): void {
-        // Add settings link under Administration menu (Super Admins only)
         APP::Component()->get('menu.main')
             ->findOrAdd(_('Administration'))
                 ->getSubmenu()
@@ -18,11 +17,9 @@ class Module extends CModule {
                         ->setAction('messageoftheday.edit')
                     );
 
-        // Load config and inject as JS variable on every page
         $config = $this->loadConfig();
 
         if ($config['enabled'] && !empty($config['message'])) {
-            // Respect "show_to" setting
             $user_type = CWebUser::getType();
             $show = false;
             if ($config['show_to'] === 'all') {
@@ -36,7 +33,9 @@ class Module extends CModule {
                     'enabled'     => true,
                     'message'     => $config['message'],
                     'type'        => $config['type'],
-                    'dismissible' => (bool) $config['dismissible']
+                    'dismissible' => (bool) $config['dismissible'],
+                    'link_url'    => $config['link_url'] ?? '',
+                    'link_label'  => !empty($config['link_label']) ? $config['link_label'] : 'Read more'
                 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
 
                 zbx_add_post_js('window.MOTD_CONFIG = ' . $js_config . ';');
@@ -50,7 +49,9 @@ class Module extends CModule {
             'message'     => '',
             'type'        => 'info',
             'dismissible' => true,
-            'show_to'     => 'all'
+            'show_to'     => 'all',
+            'link_url'    => '',
+            'link_label'  => 'Read more'
         ];
 
         $config_file = __DIR__ . '/config.json';

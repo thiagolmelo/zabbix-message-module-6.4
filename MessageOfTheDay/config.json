@@ -3,5 +3,7 @@
     "message": "Welcome to Zabbix! Please read the latest updates.",
     "type": "info",
     "dismissible": true,
-    "show_to": "all"
+    "show_to": "all",
+    "link_url": "",
+    "link_label": "Read more"
 }

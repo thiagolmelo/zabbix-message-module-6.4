@@ -2,14 +2,13 @@
 
 /**
  * @var array $data
- * Zabbix 6.4 compatible view — uses CFormList + addRow()
  */
 
 $form = (new CForm('post', 'zabbix.php'))
     ->addVar('action', 'messageoftheday.save')
     ->setName('messageoftheday_form');
 
-// ---- Flash notices (passed via ?saved= query param) ----
+// ---- Flash notices ----
 if (array_key_exists('saved', $_GET)) {
     if ($_GET['saved'] === '1') {
         $form->addItem(
@@ -26,7 +25,6 @@ if (array_key_exists('saved', $_GET)) {
     }
 }
 
-// ---- Warning if config file is not writable ----
 if (!$data['config_writable']) {
     $form->addItem(
         (new CDiv(_('Warning: config.json is not writable by the web server. Changes cannot be saved.')))
@@ -36,13 +34,11 @@ if (!$data['config_writable']) {
 }
 
 $form_list = (new CFormList())
-    // ---- Enabled ----
     ->addRow(
         (new CLabel(_('Enabled'), 'enabled')),
         (new CCheckBox('enabled', 1))
             ->setChecked($data['enabled'])
     )
-    // ---- Message ----
     ->addRow(
         (new CLabel(_('Message'), 'message'))->setAsteriskMark(),
         (new CTextArea('message', $data['message']))
@@ -50,7 +46,6 @@ $form_list = (new CFormList())
             ->setAttribute('rows', 4)
             ->setAttribute('maxlength', 2048)
     )
-    // ---- Banner type ----
     ->addRow(
         (new CLabel(_('Banner type'), 'type')),
         (new CSelect('type'))
@@ -63,13 +58,11 @@ $form_list = (new CFormList())
             ]))
             ->setValue($data['type'])
     )
-    // ---- Dismissible ----
     ->addRow(
         (new CLabel(_('Dismissible'), 'dismissible')),
         (new CCheckBox('dismissible', 1))
             ->setChecked($data['dismissible'])
     )
-    // ---- Show to ----
     ->addRow(
         (new CLabel(_('Show to'), 'show_to')),
         (new CSelect('show_to'))
@@ -79,6 +72,21 @@ $form_list = (new CFormList())
                 'admins' => _('Administrators only')
             ]))
             ->setValue($data['show_to'])
+    )
+    // ---- Link section ----
+    ->addRow(
+        (new CLabel(_('Link URL'), 'link_url')),
+        (new CTextBox('link_url', $data['link_url']))
+            ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+            ->setAttribute('placeholder', 'https://example.com/more-info')
+            ->setAttribute('maxlength', 2048)
+    )
+    ->addRow(
+        (new CLabel(_('Link label'), 'link_label')),
+        (new CTextBox('link_label', $data['link_label']))
+            ->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
+            ->setAttribute('placeholder', 'Read more')
+            ->setAttribute('maxlength', 100)
     );
 
 $form->addItem(
